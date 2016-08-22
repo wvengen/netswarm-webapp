@@ -1,0 +1,4 @@
+flask>=0.10.1
+eventlet>=0.18.4
+python-socketio>=1.4.4
+pymodbus>=1.2.0
