@@ -44,8 +44,9 @@ function modbusWrite(ip, type, offset, value) {
 function updateRegister(nodeId, ip, offset, value) {
   return {type: 'updateModbusRegister', nodeId, ip, offset, value};
 }
-window.modbusRead = modbusRead;
-window.modbusWrite = modbusWrite;
+function updateNodes(ipStart, nDevices) {
+  return {type: 'updateNodes', ipStart, nDevices};
+}
 
 function handleModbusResponse(rw, type, ip, offset, value, error) {
   if (!error) {
@@ -76,6 +77,16 @@ reducers.modbus = (state = initialModbusState, action) => {
     const newRegisters = {...oldNodeData.registers, [action.offset]: action.value};
     const newNodeData = {...oldNodeData, lastSeen: now, registers: newRegisters};
     return {...state, [nodeId]: newNodeData};
+  case 'updateNodes':
+    const ids = Array.from(Array(action.nDevices).keys());
+    return ids.reduce((r, nodeId) => {
+      let newNodeData = state[nodeId];
+      if (!newNodeData) {
+        const ip = action.ipStart.slice(0, 3).concat([action.ipStart[3] + nodeId]);
+        newNodeData = newModbusNodeState(nodeId, ip);
+      }
+      return {...r, [nodeId]: newNodeData};
+    }, {});
   default:
     return state;
   }
@@ -91,9 +102,16 @@ function newModbusNodeState(nodeId, ip) {
   };
 }
 
+// 'exports'
+window.modbusRead = modbusRead;
+window.modbusWrite = modbusWrite;
+window.updateNodes = updateNodes;
+
 
 /*
  * Store
  */
 const createStoreWithMiddleware = Redux.applyMiddleware(ReduxThunk.default, reduxLogger())(Redux.createStore);
-window.store = createStoreWithMiddleware(Redux.combineReducers(reducers));
+const store = createStoreWithMiddleware(Redux.combineReducers(reducers));
+// 'exports'
+window.store = store;

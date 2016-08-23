@@ -1,10 +1,5 @@
 const {connect} = ReactRedux;
-const {Button, Glyphicon, Modal, Navbar, OverlayTrigger, Panel, PanelGroup, Tooltip} = ReactBootstrap;
-
-// return 4 IP address bytes from node data
-function ipAddrBytes(node) {
-  return [node.registers[0] >> 8, node.registers[0] & 0xff, node.registers[1] >> 8, node.registers[1] & 0xff];
-}
+const {Button, Glyphicon, Navbar, OverlayTrigger, Panel, PanelGroup, Tooltip} = ReactBootstrap;
 
 /*
  * Container: NodePanel
@@ -85,44 +80,6 @@ const StatusLightContainer = connect(
   ({status: {connected}}) => ({connected})
 )(StatusLight);
 
-/*
- * Component: SettingsButton
- */
-class SettingsButton extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {showModal: false};
-  }
-
-  open() {
-    this.setState({showModal: true});
-  }
-  
-  close() {
-    this.setState({showModal: false});
-  }
-
-  render() {
-    return (
-      <div>
-        <Button type='submit' onClick={this.open.bind(this)}>
-          <Glyphicon glyph='cog' />
-        </Button>
-        <Modal show={this.state.showModal} onHide={this.close.bind(this)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Settings</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>@todo</p>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button onClick={this.close.bind(this)}>Close</Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
-    );
-  }
-}
 
 /*
  * Component: Layout
