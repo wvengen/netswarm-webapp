@@ -109,7 +109,7 @@ class NodePanel extends React.Component {
           <strong style={{marginRight: '.6em'}}>Last seen</strong>
           <div style={{display: 'inline-block', textAlign: 'center', width: '4em'}}>
             {node.lastSeen
-              ? moment(node.lastSeen).format('HH:mm:SS')
+              ? moment(node.lastSeen).format('HH:mm:ss')
               : <i>never</i>
               }
           </div>
