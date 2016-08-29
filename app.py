@@ -99,7 +99,7 @@ def updateConfig(sid, data):
 def getModbusClient(ip, proto = config.get('modbusProto')):
     host = '.'.join(map(str, ip))
     if proto == 'UDP':
-        return ModbusUdpClient(host)
+        return ModbusUdpClient(host, timeout=0.2) # timeout important since it's sync :(
     elif proto == 'TCP':
         c = ModbusClient(host)
         c.connect()
