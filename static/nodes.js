@@ -8,7 +8,7 @@ const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
   const readonly = !['hreg', 'coil'].includes(type);
   const parts = splitValue(value, bits);
   const showPre = s => <span style={{color: '#aaa'}}>{s}</span>;
-  const change = (newValue, i) => (onChange && !readonly) ? onChange(combineValue(newValue, bits, value, i)) : null;
+  const change = (newValue, i) => (onChange && !readonly) ? onChange(combineValue(value, bits, newValue, i)) : null;
   let useSep = true;
   let showPart = e => e;
 
