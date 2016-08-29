@@ -38,10 +38,12 @@ class NodePanel extends React.Component {
         </div>
         <div className='pull-right'>
           <strong style={{marginRight: '.6em'}}>Last seen</strong>
-          {node.lastSeen
-            ? moment(node.lastSeen).format('HH:mm:SS')
-            : <i>never</i>
-            }
+          <div style={{display: 'inline-block', textAlign: 'center', width: '4em'}}>
+            {node.lastSeen
+              ? moment(node.lastSeen).format('HH:mm:SS')
+              : <i>never</i>
+              }
+          </div>
         </div>
         <div>
           <strong style={{marginRight: '.6em'}}>IP</strong>&nbsp;
