@@ -56,6 +56,14 @@ class SettingsForm extends React.Component {
             <Radio checked={this.state.modbusProto === 'TCP'} value='TCP' onChange={e => this.setState({modbusProto: 'TCP'})} inline>TCP</Radio>
           </Col>
         </FormGroup>
+        <FormGroup controlId='modbusProto'>
+          <Col componentClass={ControlLabel} sm={4}>
+            Registers
+          </Col>
+          <Col sm={8}>
+            <i>todo :)</i>
+          </Col>
+        </FormGroup>
       </Form>
     );
   }
