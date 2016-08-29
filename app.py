@@ -56,7 +56,9 @@ def readWorker(ip, typ, offset, count):
     else:
         raise "Unknown read data type requested: %s"%typ
 
-    if rq.function_code < 0x80:
+    if not rq:
+        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
+    elif rq.function_code < 0x80:
         sio.emit('readResponse', {'ip': ip, 'type': typ, 'offset': offset, 'value': rq.registers})
     else:
         sio.emit('readResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%rq.function_code})
@@ -74,7 +76,9 @@ def writeWorker(ip, typ, offset, value):
     else:
         raise "Unknown write data type requested: %s"%typ
 
-    if rq.function_code < 0x80:
+    if not rq:
+        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
+    elif rq.function_code < 0x80:
         sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'value': value})
     else:
         sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%rq.function_code})

@@ -65,17 +65,23 @@ window.updateConfig = updateConfig;
 /*
  * Modbus
  */
-function modbusRead(ip, type, offset, count) {
-  socket.emit('read', {type, ip, offset, count});
+function modbusRead(nodeId, type, offset, count) {
+  return (dispatch, getState) => {
+    const ip = nodeId2Ip(getState().config.ipStart, nodeId);
+    socket.emit('read', {type, ip, offset, count});
+  };
 }
-function modbusWrite(ip, type, offset, value) {
-  socket.emit('write', {type, ip, offset, values: typeof(value) === 'number' ? [value] : value});
+function modbusWrite(nodeId, type, offset, value) {
+  return (dispatch, getState) => {
+    const ip = nodeId2Ip(getState().config.ipStart, nodeId);
+    socket.emit('write', {type, ip, offset: parseInt(offset), value: typeof(value) === 'number' ? [value] : value});
+  };
 }
 function updateRegister(nodeId, ip, offset, value) {
-  // @todo see if we can get rid of getState() here, it could be called a lot and is triggered rarely
+  // @todo see if we can get rid of getState() here, it could be called a lot and is rarely needed
   return (dispatch, getState) => {
     const {config: {registers}} = getState();
-    dispatch({type: 'updateModbusRegister', nodeId, offset, value, registers});
+    dispatch({type: 'updateModbusRegister', nodeId, ip, offset: parseInt(offset), value, registers});
   };
 }
 function updateNodes(ipStart, nDevices, registers) {
@@ -84,12 +90,13 @@ function updateNodes(ipStart, nDevices, registers) {
 
 function handleModbusResponse(rw, type, ip, offset, value, error) {
   if (!error) {
-    const nodeId = ip[3] - store.getState().config.ipStart[3];
+    const nodeId = ip2NodeId(store.getState().config.ipStart, ip);
     value.forEach(v => {
       store.dispatch(updateRegister(nodeId, ip, offset, v));
     });
   } else {
     // @todo handle errors
+    console.log('Modbus error response:', error);
   }
 }
 socket.on('readResponse', ({type, ip, offset, value, error}) => {
@@ -115,7 +122,7 @@ reducers.modbus = (state = initialModbusState, action) => {
     return ids.reduce((r, nodeId) => {
       let newNodeData = state[nodeId];
       if (!newNodeData) {
-        const ip = action.ipStart.slice(0, 3).concat([action.ipStart[3] + nodeId]);
+        const ip = nodeId2Ip(action.ipStart, nodeId);
         newNodeData = newModbusNodeState(nodeId, ip, action.registers);
       }
       return {...r, [nodeId]: newNodeData};

@@ -4,10 +4,11 @@ const {Button, Checkbox, Panel, PanelGroup, Table} = ReactBootstrap;
 /*
  * Component: RegisterValue
  */
-const RegisterValue = ({value, type, format, bits, ...props}) => {
+const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
   const readonly = !['hreg', 'coil'].includes(type);
   const parts = splitValue(value, bits);
   const showPre = s => <span style={{color: '#aaa'}}>{s}</span>;
+  const change = (newValue, i) => (onChange && !readonly) ? onChange(combineValue(newValue, bits, value, i)) : null;
   let useSep = true;
   let showPart = e => e;
 
@@ -18,10 +19,12 @@ const RegisterValue = ({value, type, format, bits, ...props}) => {
   } else if (format === 'oct') {
     showPart = (v,i) => <span key={i}>{showPre('0')}<b>{v.toString(8)}</b></span>;
   } else if (format === 'bool') {
-    showPart = (v,i) => <input key={i} type='checkbox' checked={!!v} disabled={readonly} />;
+    showPart = (v,i) => <input key={i} type='checkbox' checked={!!v} disabled={readonly}
+                               onChange={change(v ? 0 : 1, i)} />;
     useSep = false;
   } else if (format === 'btn') {
-    showPart = (v,i) => <Button key={i} active={!!v} disabled={readonly} bsSize='xsmall' style={{verticalAlign: 'top', lineHeight: 1.4}}>●</Button>;
+    showPart = (v,i) => <Button key={i} active={!!v} disabled={readonly} bsSize='xsmall' style={{verticalAlign: 'top', lineHeight: 1.4}}
+                                onClick={() => change(v ? 0 : 1, i)}>●</Button>;
     useSep = false;
   } else if (format === 'char') {
     // background color to show something for invisible characters
@@ -37,11 +40,18 @@ const RegisterValue = ({value, type, format, bits, ...props}) => {
     ), [])}</span>
   );
 }
+// return array of value split by bits (most significant first)
 function splitValue(value, bits) {
   const mask = Math.pow(2, bits) - 1;
   return Array.from(Array(16 / bits)).map((_, i) => (
     (value >> (i * bits)) & mask
   )).reverse();
+}
+// put updated split value back into the full-width value
+function combineValue(value, bits, newValue, index) {
+  const mask = Math.pow(2, bits) - 1;
+  const cleanValue = value & ~(mask << (16 - (index + 1) * bits));
+  return cleanValue | (newValue << (16 - (index + 1) * bits));
 }
 RegisterValue.defaultProps = {
   type: 'hreg',
@@ -52,12 +62,13 @@ RegisterValue.propTypes = {
   type: React.PropTypes.oneOf(['hreg', 'coil']).isRequired,
   format: React.PropTypes.oneOf(['hex', 'dec', 'oct', 'bool', 'btn', 'char']).isRequired,
   bits: React.PropTypes.oneOf([1, 2, 4, 8, 16]).isRequired,
+  onChange: React.PropTypes.func,
 };
 
 /*
  * Component: NodeRegisters
  */
-const NodeRegisters = ({registers, config}) => {
+const NodeRegisters = ({registers, config, onChange}) => {
   return (
     <div>
       {Object.entries(registers).map(([idx, val]) => (
@@ -68,7 +79,7 @@ const NodeRegisters = ({registers, config}) => {
               : `Address ${idx}`
             }
           </span>
-          <RegisterValue value={val} {...config[idx]} />
+          <RegisterValue value={val} {...config[idx]} onChange={val => onChange ? onChange(idx, val) : null} />
         </div>
       ))}
     </div>
@@ -78,8 +89,8 @@ const NodeRegisters = ({registers, config}) => {
 /*
  * Component: NodePanelContents
  */
-const NodePanelContents = ({node, config}) => (
-  <NodeRegisters registers={node.registers} config={config} />
+const NodePanelContents = ({node, config, onChangeRegister}) => (
+  <NodeRegisters registers={node.registers} config={config} onChange={onChangeRegister} />
 );
 
 /*
@@ -111,13 +122,19 @@ class NodePanel extends React.Component {
     );
     return (
       <Panel header={title} {...props}>
-        <NodePanelContents node={node} config={config} />
+        <NodePanelContents node={node} config={config} onChangeRegister={this._onChangeRegister.bind(this)} />
       </Panel>
     );
   }
+
+  _onChangeRegister(idx, value) {
+    const {node, nodeId, config} = this.props;
+    const {type} = config[idx];
+    this.props.dispatch(modbusWrite(nodeId, type, idx, value));
+  }
 }
 const NodePanelContainer = connect(
-  ({modbus, config: {registers}}, {nodeId}) => ({node: modbus[nodeId] || {}, config: registers})
+  ({modbus, config: {ipStart, registers}}, {nodeId}) => ({node: modbus[nodeId] || {}, config: registers})
 )(NodePanel);
 
 /*
@@ -135,8 +152,11 @@ class NodePanelList extends React.Component {
     );
   }
 }
+NodePanelList.propTypes = {
+  nodeIds: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+};
 const NodePanelListContainer = connect(
-  ({modbus}) => ({nodeIds: Object.keys(modbus)})
+  ({modbus}) => ({nodeIds: Object.keys(modbus).map(i => parseInt(i))})
 )(NodePanelList);
 
 // 'exports'
