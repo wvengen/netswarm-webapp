@@ -24,7 +24,11 @@ const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
     useSep = false;
   } else if (format === 'btn') {
     showPart = (v,i) => <Button key={i} active={!!v} disabled={readonly} bsSize='xsmall' style={{verticalAlign: 'top', lineHeight: 1.4}}
-                                onClick={() => change(v ? 0 : 1, i)}>●</Button>;
+                                onClick={() => change(v ? 0 : 1, i)}>⦾</Button>;
+    useSep = false;
+  } else if (format === 'cmdbtn') {
+    showPart = (v,i) => <Button key={i} disabled={readonly} bsSize='xsmall' style={{verticalAlign: 'top', lineHeight: 1.4}}
+                                onClick={() => change(1, i)}>⦿</Button>;
     useSep = false;
   } else if (format === 'char') {
     // background color to show something for invisible characters
@@ -60,7 +64,7 @@ RegisterValue.defaultProps = {
 };
 RegisterValue.propTypes = {
   type: React.PropTypes.oneOf(['hreg', 'coil']).isRequired,
-  format: React.PropTypes.oneOf(['hex', 'dec', 'oct', 'bool', 'btn', 'char']).isRequired,
+  format: React.PropTypes.oneOf(['hex', 'dec', 'oct', 'bool', 'btn', 'cmdbtn', 'char']).isRequired,
   bits: React.PropTypes.oneOf([1, 2, 4, 8, 16]).isRequired,
   onChange: React.PropTypes.func,
 };

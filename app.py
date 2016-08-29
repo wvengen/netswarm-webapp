@@ -23,9 +23,9 @@ config = {
     'registers': {
         0: {'type': 'hreg', 'format': 'dec', 'bits':  8, 'label': 'IP address (1-2)'},
         1: {'type': 'hreg', 'format': 'dec', 'bits':  8, 'label': 'IP address (3-4)'},
-        2: {'type': 'coil', 'format': 'btn',             'label': 'Apply'},
-        3: {'type': 'coil', 'format': 'btn',             'label': 'Save to EEPROM'},
-        4: {'type': 'coil', 'format': 'btn',             'label': 'Load from EEPROM'},
+        2: {'type': 'coil', 'format': 'cmdbtn',          'label': 'Apply'},
+        3: {'type': 'coil', 'format': 'cmdbtn',          'label': 'Save to EEPROM'},
+        4: {'type': 'coil', 'format': 'cmdbtn',          'label': 'Load from EEPROM'},
     }
 }
 if os.path.exists('config.json'):
