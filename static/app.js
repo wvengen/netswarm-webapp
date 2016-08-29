@@ -6,24 +6,28 @@ const {Button, Glyphicon, Navbar, OverlayTrigger, Panel, PanelGroup, Tooltip} = 
  */
 class NodePanel extends React.Component {
   render() {
+    const {eventKey, node, nodeId} = this.props;
     const title = (
       <div style={{textAlign: 'center'}}>
         <div className='pull-left'>
           <strong style={{marginRight: '.6em'}}>ID</strong>
-          <tt>{this.props.nodeId}</tt>
+          <tt>{nodeId}</tt>
         </div>
         <div className='pull-right'>
-          <strong style={{marginRight: '.6em'}}>State</strong>
-          <i>unknown</i>
+          <strong style={{marginRight: '.6em'}}>Last seen</strong>
+          {node.lastSeen
+            ? moment(node.lastSeen).format('HH:mm:SS')
+            : <i>never</i>
+            }
         </div>
         <div>
           <strong style={{marginRight: '.6em'}}>IP</strong>&nbsp;
-          <tt>{ipAddrBytes(this.props.node).join('.')}</tt>
+          <tt>{ipAddrBytes(node).join('.')}</tt>
         </div>
       </div>
     );
     return (
-      <Panel eventKey={this.props.eventKey} header={title}>
+      <Panel eventKey={eventKey} header={title}>
         :)
       </Panel>
     );
