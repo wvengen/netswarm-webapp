@@ -19,8 +19,6 @@ socket.on('status', ({connected}) => {
 
 const initialStatusState = {
   connected: 'offline',
-  ipStart: [192, 168, 1, 177],
-  nDevices: 1,
 };
 reducers.status = (state = initialStatusState, action) => {
   switch(action.type) {
@@ -31,15 +29,46 @@ reducers.status = (state = initialStatusState, action) => {
   }
 };
 
+/*
+ * Config
+ */
+// update config on server
+function updateConfig(config) {
+  return () => {
+    socket.emit('updateConfig', config);
+  };
+}
+// update config in webapp when it was updated on the server
+function updateLocalConfig(config) {
+  return (dispatch, getState) => {
+    const ipStart = config.ipStart || getState().config.ipStart;
+    const nDevices = config.nDevices || getState().config.nDevices;
+    dispatch({type: 'updateLocalConfig', config});
+    dispatch(updateNodes(ipStart, nDevices));
+  };
+}
+socket.on('config', config => {
+  store.dispatch(updateLocalConfig(config));
+});
+reducers.config = (state = {}, action) => {
+  switch(action.type) {
+  case 'updateLocalConfig':
+    return {...state, ...action.config};
+  default:
+    return state;
+  }
+};
+// 'exports'
+window.updateConfig = updateConfig;
 
 /*
  * Modbus
  */
 function modbusRead(ip, type, offset, count) {
-  socket.emit('read', {type, ip: ip.join('.'), offset, count});
+  socket.emit('read', {type, ip, offset, count});
 }
 function modbusWrite(ip, type, offset, value) {
-  socket.emit('write', {type, ip: ip.join('.'), offset, values: typeof(value) === 'number' ? [value] : value});
+  socket.emit('write', {type, ip, offset, values: typeof(value) === 'number' ? [value] : value});
 }
 function updateRegister(nodeId, ip, offset, value) {
   return {type: 'updateModbusRegister', nodeId, ip, offset, value};
@@ -50,10 +79,9 @@ function updateNodes(ipStart, nDevices) {
 
 function handleModbusResponse(rw, type, ip, offset, value, error) {
   if (!error) {
-    const ipa = ip.split('.').map(s => parseInt(s));
-    const nodeId = ipa[3] - store.getState().status.ipStart[3];
+    const nodeId = ip[3] - store.getState().status.ipStart[3];
     value.forEach(v => {
-      store.dispatch(updateRegister(nodeId, ipa, offset, v));
+      store.dispatch(updateRegister(nodeId, ip, offset, v));
     });
   } else {
     // @todo handle errors

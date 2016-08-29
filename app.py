@@ -1,18 +1,31 @@
 import os
+import json
 import socketio
 import eventlet
 import eventlet.wsgi
 from flask import Flask, render_template
 from pymodbus.client.sync import ModbusUdpClient, ModbusTcpClient
 
+# Allow to customize the webserver port in the environment
 PORT = os.getenv('PORT', 5000)
-MODBUS_PORT = os.getenv('MODBUS_PORT', 502)
-MODBUS_PROTO = os.getenv('MODBUS_PROTO', 'UDP')
 
+# Setup webserver
 sio = socketio.Server(logger=True, async_mode='eventlet')
 app = Flask(__name__)
 thread = None
 pile = eventlet.GreenPile()
+
+# Setup configuration
+config = {
+    'modbusProto': 'UDP',
+    'ipStart': [192, 168, 1, 177],
+    'nDevices': 1,
+}
+if os.path.exists('config.json'):
+    with open('config.json') as f:
+        config.update(json.load(f))
+
+# Setup webserver routes
 
 @app.route('/')
 def index():
@@ -21,6 +34,7 @@ def index():
 @sio.on('connect')
 def connect(sid, environ):
     sio.emit('status', {'connected': True}, room=sid)
+    getConfig(sid)
 
 @sio.on('read')
 def read(sid, data):
@@ -58,17 +72,31 @@ def writeWorker(ip, typ, offset, value):
     else:
         sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%rq.function_code})
 
+@sio.on('getConfig')
+def getConfig(sid, data = None):
+    sio.emit('config', config, room=sid)
 
-def getModbusClient(ip, proto = MODBUS_PROTO):
+@sio.on('updateConfig')
+def updateConfig(sid, data):
+    config.update(data)
+    with open('config.json', 'w') as f:
+        json.dump(config, f, indent=2)
+    sio.emit('config', config)
+
+
+# Return modbus client for the selected protocol
+def getModbusClient(ip, proto = config.get('modbusProto')):
+    host = ip.join('.')
     if proto == 'UDP':
-        return ModbusUdpClient(ip)
+        return ModbusUdpClient(host)
     elif proto == 'TCP':
-        c = ModbusClient(ip)
+        c = ModbusClient(host)
         c.connect()
         return c
     else:
         raise "Unknown Modbus protocol: %s"%proto
 
+# Main program
 if __name__ == '__main__':
     app = socketio.Middleware(sio, app)
     eventlet.wsgi.server(eventlet.listen(('', PORT)), app)

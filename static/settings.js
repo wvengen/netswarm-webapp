@@ -1,16 +1,20 @@
 const {connect} = ReactRedux;
-const {Col, ControlLabel, Button, Form, FormControl, FormGroup, Glyphicon, InputGroup, Modal} = ReactBootstrap;
+const {Col, ControlLabel, Button, Form, FormControl, FormGroup, Glyphicon, InputGroup, Modal, Radio} = ReactBootstrap;
 
 const FormControlIPByte = (props) => (
   <FormControl type='number' min={0} max={255} {...props} />
 );
 
+/*
+ * Container: SettingsFormContainer
+ */
 class SettingsForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       ipStart: props.ipStart,
       nDevices: props.nDevices,
+      modbusProto: props.modbusProto,
     };
   }
 
@@ -43,6 +47,15 @@ class SettingsForm extends React.Component {
                          onChange={e => this.setState({nDevices: parseInt(e.target.value)})} />
           </Col>
         </FormGroup>
+        <FormGroup controlId='modbusProto'>
+          <Col componentClass={ControlLabel} sm={4}>
+            Modbus protocol
+          </Col>
+          <Col sm={8}>
+            <Radio checked={this.state.modbusProto === 'UDP'} value='UDP' onChange={e => this.setState({modbusProto: 'UDP'})} inline>UDP</Radio>
+            <Radio checked={this.state.modbusProto === 'TCP'} value='TCP' onChange={e => this.setState({modbusProto: 'TCP'})} inline>TCP</Radio>
+          </Col>
+        </FormGroup>
       </Form>
     );
   }
@@ -55,12 +68,16 @@ class SettingsForm extends React.Component {
   }
 
   apply() {
-    this.props.dispatch(updateNodes(this.state.ipStart, this.state.nDevices));
+    this.props.dispatch(updateConfig(this.state));
   }
 }
 const SettingsFormContainer = connect(
-  ({status: {ipStart, nDevices}}) => ({ipStart, nDevices}), null, null, {withRef: true}
+  ({config}) => ({...config}), null, null, {withRef: true}
 )(SettingsForm);
+// propagate {#apply} to component
+SettingsFormContainer.prototype.apply = function() {
+  return this.getWrappedInstance().apply();
+};
 
 /*
  * Component: SettingsButton
@@ -102,8 +119,7 @@ class SettingsButton extends React.Component {
   }
 
   _onSubmit() {
-    // we need to access the wrapped component after `connect()` :/
-    this.refs.form.getWrappedInstance().apply();
+    this.refs.form.apply();
     this.close();
   }
 }
