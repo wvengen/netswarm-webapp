@@ -1,5 +1,28 @@
 const {connect} = ReactRedux;
-const {Panel, PanelGroup} = ReactBootstrap;
+const {Panel, PanelGroup, Table} = ReactBootstrap;
+
+/*
+ * Component: NodeRegisters
+ */
+const NodeRegisters = ({registers}) => {
+  return (
+    <div>
+      {Object.entries(registers).map(([idx, val]) => (
+        <div key={idx} style={{display: 'inline-block', textAlign: 'right', width: 250, padding: '6px 12px', border: '1px solid #ddd'}}>
+          <span style={{float: 'left', textAlign: 'left', width: 100}}>Address {idx}</span>
+          <b>{val}</b>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/*
+ * Component: NodePanelContents
+ */
+const NodePanelContents = ({node}) => (
+  <NodeRegisters registers={node.registers} />
+);
 
 /*
  * Container: NodePanelContainer
@@ -28,7 +51,7 @@ class NodePanel extends React.Component {
     );
     return (
       <Panel header={title} {...props}>
-        :)
+        <NodePanelContents node={node} />
       </Panel>
     );
   }

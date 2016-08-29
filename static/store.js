@@ -123,10 +123,10 @@ function newModbusNodeState(nodeId, ip) {
   return {
     lastSeen: null,
     nodeId,
-    registers: [
-      (ip[0] << 8) + ip[1],
-      (ip[2] << 8) + ip[3],
-    ]
+    registers: {
+      0: (ip[0] << 8) + ip[1],
+      1: (ip[2] << 8) + ip[3],
+    }
   };
 }
 
