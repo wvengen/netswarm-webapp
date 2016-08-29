@@ -5,6 +5,8 @@ Web application for monitoring and debugging a network of Arduinos based on
 
 **In progress, not ready for use yet.**
 
+![screenshot](screenshot.png)
+
 
 ## Install
 
