@@ -79,7 +79,7 @@ function updateNodes(ipStart, nDevices) {
 
 function handleModbusResponse(rw, type, ip, offset, value, error) {
   if (!error) {
-    const nodeId = ip[3] - store.getState().status.ipStart[3];
+    const nodeId = ip[3] - store.getState().config.ipStart[3];
     value.forEach(v => {
       store.dispatch(updateRegister(nodeId, ip, offset, v));
     });

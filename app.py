@@ -86,7 +86,7 @@ def updateConfig(sid, data):
 
 # Return modbus client for the selected protocol
 def getModbusClient(ip, proto = config.get('modbusProto')):
-    host = ip.join('.')
+    host = '.'.join(map(str, ip))
     if proto == 'UDP':
         return ModbusUdpClient(host)
     elif proto == 'TCP':
