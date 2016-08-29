@@ -6,9 +6,9 @@ const {Button, Glyphicon, Navbar, OverlayTrigger, Panel, PanelGroup, Tooltip} = 
  */
 class NodePanel extends React.Component {
   render() {
-    const {eventKey, node, nodeId} = this.props;
+    const {node, nodeId, dispatch, ...props} = this.props;
     const title = (
-      <div style={{textAlign: 'center'}}>
+      <div style={{textAlign: 'center', cursor: 'pointer'}}>
         <div className='pull-left'>
           <strong style={{marginRight: '.6em'}}>ID</strong>
           <tt>{nodeId}</tt>
@@ -27,7 +27,7 @@ class NodePanel extends React.Component {
       </div>
     );
     return (
-      <Panel eventKey={eventKey} header={title}>
+      <Panel header={title} {...props}>
         :)
       </Panel>
     );
