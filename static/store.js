@@ -43,8 +43,9 @@ function updateLocalConfig(config) {
   return (dispatch, getState) => {
     const ipStart = config.ipStart || getState().config.ipStart;
     const nDevices = config.nDevices || getState().config.nDevices;
+    const registers = config.registers || getState().config.registers;
     dispatch({type: 'updateLocalConfig', config});
-    dispatch(updateNodes(ipStart, nDevices));
+    dispatch(updateNodes(ipStart, nDevices, registers));
   };
 }
 socket.on('config', config => {
@@ -71,10 +72,14 @@ function modbusWrite(ip, type, offset, value) {
   socket.emit('write', {type, ip, offset, values: typeof(value) === 'number' ? [value] : value});
 }
 function updateRegister(nodeId, ip, offset, value) {
-  return {type: 'updateModbusRegister', nodeId, ip, offset, value};
+  // @todo see if we can get rid of getState() here, it could be called a lot and is triggered rarely
+  return (dispatch, getState) => {
+    const {config: {registers}} = getState();
+    dispatch({type: 'updateModbusRegister', nodeId, offset, value, registers});
+  };
 }
-function updateNodes(ipStart, nDevices) {
-  return {type: 'updateNodes', ipStart, nDevices};
+function updateNodes(ipStart, nDevices, registers) {
+  return {type: 'updateNodes', ipStart, nDevices, registers};
 }
 
 function handleModbusResponse(rw, type, ip, offset, value, error) {
@@ -101,7 +106,7 @@ reducers.modbus = (state = initialModbusState, action) => {
   case 'updateModbusRegister':
     const nodeId = action.nodeId;
     const now = new Date().getTime();
-    const oldNodeData = state[nodeId] || newModbusNodeState(nodeId, action.ip);
+    const oldNodeData = state[nodeId] || newModbusNodeState(nodeId, action.ip, action.registers);
     const newRegisters = {...oldNodeData.registers, [action.offset]: action.value};
     const newNodeData = {...oldNodeData, lastSeen: now, registers: newRegisters};
     return {...state, [nodeId]: newNodeData};
@@ -111,7 +116,7 @@ reducers.modbus = (state = initialModbusState, action) => {
       let newNodeData = state[nodeId];
       if (!newNodeData) {
         const ip = action.ipStart.slice(0, 3).concat([action.ipStart[3] + nodeId]);
-        newNodeData = newModbusNodeState(nodeId, ip);
+        newNodeData = newModbusNodeState(nodeId, ip, action.registers);
       }
       return {...r, [nodeId]: newNodeData};
     }, {});
@@ -119,14 +124,18 @@ reducers.modbus = (state = initialModbusState, action) => {
     return state;
   }
 };
-function newModbusNodeState(nodeId, ip) {
+function newModbusNodeState(nodeId, ip, registerConfig) {
+  let registers = {};
+
+  // get default registers from config, but ip address is a given
+  Object.keys(registerConfig).forEach(k => { registers[k] = null; } );
+  registers[0] = (ip[0] << 8) + ip[1];
+  registers[1] = (ip[2] << 8) + ip[3];
+
   return {
     lastSeen: null,
     nodeId,
-    registers: {
-      0: (ip[0] << 8) + ip[1],
-      1: (ip[2] << 8) + ip[3],
-    }
+    registers
   };
 }
 

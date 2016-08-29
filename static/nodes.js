@@ -61,7 +61,7 @@ const NodeRegisters = ({registers, config}) => {
   return (
     <div>
       {Object.entries(registers).map(([idx, val]) => (
-        <div key={idx} style={{display: 'inline-block', textAlign: 'right', width: 250, padding: '6px 12px', border: '1px solid #ddd'}}>
+        <div key={idx} style={{display: 'inline-block', textAlign: 'right', width: 220, padding: '6px 12px', border: '1px solid #ddd'}}>
           <span style={{float: 'left', textAlign: 'left'}}>
             {config[idx] && config[idx].label
               ? config[idx].label
