@@ -18,6 +18,7 @@ pile = eventlet.GreenPile()
 # Setup configuration
 config = {
     'modbusProto': 'UDP',
+    'modbusPort': 512,
     'ipStart': [192, 168, 1, 177],
     'nDevices': 1,
     'registers': {
@@ -96,12 +97,12 @@ def updateConfig(sid, data):
 
 
 # Return modbus client for the selected protocol
-def getModbusClient(ip, proto = config.get('modbusProto')):
+def getModbusClient(ip, proto = config.get('modbusProto'), port = config.get('modbusPort')):
     host = '.'.join(map(str, ip))
     if proto == 'UDP':
-        return ModbusUdpClient(host, timeout=0.2) # timeout important since it's sync :(
+        return ModbusUdpClient(host, port=port, timeout=0.2) # timeout important since it's sync :(
     elif proto == 'TCP':
-        c = ModbusClient(host)
+        c = ModbusClient(host, port=port)
         c.connect()
         return c
     else:

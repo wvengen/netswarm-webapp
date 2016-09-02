@@ -15,6 +15,7 @@ class SettingsForm extends React.Component {
       ipStart: props.ipStart,
       nDevices: props.nDevices,
       modbusProto: props.modbusProto,
+      modbusPort: props.modbusPort,
     };
   }
 
@@ -51,12 +52,22 @@ class SettingsForm extends React.Component {
           <Col componentClass={ControlLabel} sm={4}>
             Modbus protocol
           </Col>
-          <Col sm={8}>
-            <Radio checked={this.state.modbusProto === 'UDP'} value='UDP' onChange={e => this.setState({modbusProto: 'UDP'})} inline>UDP</Radio>
-            <Radio checked={this.state.modbusProto === 'TCP'} value='TCP' onChange={e => this.setState({modbusProto: 'TCP'})} inline>TCP</Radio>
+          <Col sm={3}>
+            <Radio checked={this.state.modbusProto === 'UDP'} value='UDP'
+                   onChange={e => this.setState({modbusProto: 'UDP'})} inline>UDP</Radio>
+            <Radio checked={this.state.modbusProto === 'TCP'} value='TCP'
+                   onChange={e => this.setState({modbusProto: 'TCP'})} inline>TCP</Radio>
+          </Col>
+          <Col componentClass={ControlLabel} sm={2}>
+            port
+          </Col>
+          <Col sm={3}>
+            <FormControl type='number'
+                         value={this.state.modbusPort} min={1} max={65535}
+                         onChange={e => this.setState({modbusPort: e.target.value})} />
           </Col>
         </FormGroup>
-        <FormGroup controlId='modbusProto'>
+        <FormGroup controlId='registers'>
           <Col componentClass={ControlLabel} sm={4}>
             Registers
           </Col>
