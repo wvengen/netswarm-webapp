@@ -1,5 +1,6 @@
 import os
 import json
+import signal
 import socketio
 from twisted.internet import reactor
 from twisted.web.static import File
@@ -111,6 +112,10 @@ def getModbusClient(ip, proto = config.get('modbusProto'), port = config.get('mo
 # Setup and run webserver
 #
 def main():
+    # first make sure we can use ctrl-c
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, signal_handler)
+
     # static files
     prefix = os.path.dirname(__file__)
     root = File(prefix.join('static'))
@@ -125,6 +130,10 @@ def main():
     site = Site(root)
     reactor.listenTCP(PORT, site)
     reactor.run()
+
+def signal_handler(*args):
+    print("Killed by user")
+    reactor.stop()
 
 if __name__ == '__main__':
     main()
