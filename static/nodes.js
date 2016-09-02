@@ -160,7 +160,7 @@ NodePanelList.propTypes = {
   nodeIds: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
 };
 const NodePanelListContainer = connect(
-  ({modbus}) => ({nodeIds: Object.keys(modbus).map(i => parseInt(i))})
+  ({modbus}) => ({nodeIds: Object.keys(modbus)})
 )(NodePanelList);
 
 // 'exports'

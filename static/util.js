@@ -5,9 +5,9 @@ function ipAddrBytes(node) {
 }
 
 function nodeId2Ip(ipStart, nodeId) {
-  if (typeof(nodeId) === 'number') {
+  if (String(~~Number(nodeId)) === String(nodeId)) { // @todo make sure numbers are never strings and use `typeof(nodeId)`
     // if number, convert to IP
-    return ipStart.slice(0, 3).concat([ipStart[3] + nodeId]);
+    return ipStart.slice(0, 3).concat([ipStart[3] + Number(nodeId)]);
   } else {
     // otherwise it's a string which is the IP address directly
     return nodeId.split('.').map(s => parseInt(s));
