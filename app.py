@@ -2,7 +2,7 @@ import os
 import json
 import signal
 import socketio
-from twisted.internet import reactor, protocol, error
+from twisted.internet import reactor, protocol, defer, error
 from twisted.web.static import File
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
@@ -110,7 +110,13 @@ def getModbusClient(ip):
     port = int(config.get('modbusPort'))
     timeout = int(config.get('modbusTimeout'))
     if proto == 'UDP':
-        creator = None
+        protocol = ModbusUdpClientProtocol()
+        reactor.listenUDP(0, protocol) # @todo check if we need a (free) port here instead of 0
+        protocol.transport.connect(host, port)
+        d = defer.Deferred()
+        d.callback(protocol)
+        # @todo figure out how to implement timeout
+        return d
     elif proto == 'TCP':
         creator = protocol.ClientCreator(reactor, ModbusClientProtocol)
         return creator.connectTCP(host, port, timeout=timeout)
