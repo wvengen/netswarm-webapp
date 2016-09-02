@@ -2,7 +2,7 @@ import os
 import json
 import signal
 import socketio
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, error
 from twisted.web.static import File
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
@@ -128,13 +128,16 @@ def modbusCallback(s, r, data, value):
 
 # Errback for modbus read/write requests
 def modbusErrbackResponse(s, r, data):
-    ip, typ, offset = data['ip'], data['type'], data['offset']
-    sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
-    return r
+    if isinstance(r, error.TimeoutError):
+        ip, typ, offset = data['ip'], data['type'], data['offset']
+        sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'No response'})
+    else:
+        sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'error': str(s)})
+        return r
 
 # Errback for opening modbus connection
 def modbusErrbackConnection(s, r, data):
-    sio.emit(s + 'Response', {'ip': data['ip'], 'error': 'Could not open Modbus connection'})
+    sio.emit(s + 'Response', {'ip': data['ip'], 'error': 'Could not open Modbus connection: %s'%s})
     return r
 
 
