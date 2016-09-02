@@ -17,8 +17,9 @@ PORT = os.getenv('PORT', 5000)
 # Initialize configuration
 #
 config = {
-    'modbusProto': 'UDP',
-    'modbusPort': 512,
+    'modbusProto': 'UDP',   # NetSwarm uses UDP by default (to use broadcast)
+    'modbusPort': 512,      # default Modbus port
+    'modbusTimeout': 3,     # short timeout to see when there's no response
     'ipStart': [192, 168, 1, 177],
     'nDevices': 1,
     'registers': {
@@ -61,10 +62,12 @@ def readCallback(client, data):
         getRes = lambda r: r.bits
     else:
         sio.emit('readResponse', {'ip': data['ip'], 'type': typ, 'error': 'Unknown read data type requested: %s'%typ})
+        client.transport.loseConnection()
         return
 
     rq.addCallback(lambda r: modbusCallback('read', r, data, getRes(r)))
     rq.addErrback(lambda r: modbusErrbackResponse('read', r, data))
+    rq.addBoth(lambda r: client.transport.loseConnection())
 
 @sio.on('write')
 def write(sid, data):
@@ -81,10 +84,12 @@ def writeCallback(client, data):
         rq = client.write_coils(offset, value)
     else:
         sio.emit('writeResponse', {'ip': data['ip'], 'type': typ, 'error': 'Unknown write data type requested: %s'%typ})
+        client.transport.loseConnection()
         return
 
     rq.addCallback(lambda r: modbusCallback('write', r, data, value))
     rq.addErrback(lambda r: modbusErrbackResponse('write', r, data))
+    rq.addBoth(lambda r: client.transport.loseConnection())
 
 @sio.on('getConfig')
 def getConfig(sid, data = None):
@@ -103,11 +108,12 @@ def getModbusClient(ip):
     host = '.'.join(map(str, ip))
     proto = config.get('modbusProto')
     port = int(config.get('modbusPort'))
+    timeout = int(config.get('modbusTimeout'))
     if proto == 'UDP':
         creator = None
     elif proto == 'TCP':
         creator = protocol.ClientCreator(reactor, ModbusClientProtocol)
-        return creator.connectTCP(host, port)
+        return creator.connectTCP(host, port, timeout=timeout)
     else:
         # @todo emit error over websocket instead
         raise "Unknown Modbus protocol: %s"%proto
