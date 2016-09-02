@@ -12,10 +12,17 @@ Web application for monitoring and debugging a network of Arduinos based on
 
 You need to have [Python](https://python.org/). Requirements are listed
 in [requirements.txt](requirements.txt) and can be installed directly
-by running:
+either by running:
 
 ```sh
 pip install -r requirements.txt
+```
+
+or, if you are on [Debian](http://debian.org/) (or a derivative like
+[Ubuntu](http://ubuntu.com/)):
+
+```sh
+sudo apt-get install python-twisted-web python-socketio python-pymodbus
 ```
 
 After that, you can start the webserver

@@ -1,21 +1,20 @@
 import os
 import json
 import socketio
-import eventlet
-import eventlet.wsgi
-from flask import Flask, render_template
+from twisted.internet import reactor
+from twisted.web.static import File
+from twisted.web.server import Site
+from twisted.web.wsgi import WSGIResource
 from pymodbus.client.sync import ModbusUdpClient, ModbusTcpClient
 
-# Allow to customize the webserver port in the environment
+
+# Allow to set HTTP server port in environment
 PORT = os.getenv('PORT', 5000)
 
-# Setup webserver
-sio = socketio.Server(logger=True, async_mode='eventlet')
-app = Flask(__name__)
-thread = None
-pile = eventlet.GreenPile()
 
+#
 # Setup configuration
+#
 config = {
     'modbusProto': 'UDP',
     'modbusPort': 512,
@@ -33,11 +32,10 @@ if os.path.exists('config.json'):
     with open('config.json') as f:
         config.update(json.load(f))
 
-# Setup webserver routes
-
-@app.route('/')
-def index():
-    return render_template('index.html')
+#
+# Setup socket.io routes
+#
+sio = socketio.Server(logger=True, async_mode='threading')
 
 @sio.on('connect')
 def connect(sid, environ):
@@ -46,7 +44,7 @@ def connect(sid, environ):
 
 @sio.on('read')
 def read(sid, data):
-    pile.spawn(readWorker, data['ip'], data['type'], data['offset'], data.get('count', 1))
+    readWorker(data['ip'], data['type'], data['offset'], data.get('count', 1))
 def readWorker(ip, typ, offset, count):
     c = getModbusClient(ip)
 
@@ -66,7 +64,7 @@ def readWorker(ip, typ, offset, count):
 
 @sio.on('write')
 def write(sid, data):
-    pile.spawn(writeWorker, data['ip'], data['type'], data['offset'], data['value'])
+    writeWorker(data['ip'], data['type'], data['offset'], data['value'])
 def writeWorker(ip, typ, offset, value):
     c = getModbusClient(ip)
 
@@ -108,7 +106,25 @@ def getModbusClient(ip, proto = config.get('modbusProto'), port = config.get('mo
     else:
         raise "Unknown Modbus protocol: %s"%proto
 
-# Main program
+
+#
+# Setup and run webserver
+#
+def main():
+    # static files
+    prefix = os.path.dirname(__file__)
+    root = File(prefix.join('static'))
+
+    # add socket.io as wsgi app
+    #   allows combining socketio with twisted so we can use async with pymodbus
+    wsApp = sio.handle_request
+    wsResource = WSGIResource(reactor, reactor.getThreadPool(), wsApp)
+    root.putChild('socket.io', wsResource)
+
+    # go
+    site = Site(root)
+    reactor.listenTCP(PORT, site)
+    reactor.run()
+
 if __name__ == '__main__':
-    app = socketio.Middleware(sio, app)
-    eventlet.wsgi.server(eventlet.listen(('', PORT)), app)
+    main()
