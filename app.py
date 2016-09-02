@@ -113,9 +113,10 @@ def getModbusClient(ip):
         protocol = ModbusUdpClientProtocol()
         reactor.listenUDP(0, protocol) # @todo check if we need a (free) port here instead of 0
         protocol.transport.connect(host, port)
+        # @todo emit error on timeout if no response received after request (...)
+        reactor.callLater(timeout, lambda: protocol.transport and protocol.transport.stopListening())
         d = defer.Deferred()
         d.callback(protocol)
-        # @todo figure out how to implement timeout
         return d
     elif proto == 'TCP':
         creator = protocol.ClientCreator(reactor, ModbusClientProtocol)
