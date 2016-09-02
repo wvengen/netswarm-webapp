@@ -2,11 +2,11 @@ import os
 import json
 import signal
 import socketio
-from twisted.internet import reactor
+from twisted.internet import reactor, protocol
 from twisted.web.static import File
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
-from pymodbus.client.sync import ModbusUdpClient, ModbusTcpClient
+from pymodbus.client.async import ModbusClientProtocol, ModbusUdpClientProtocol
 
 
 # Allow to set HTTP server port in environment
@@ -14,7 +14,7 @@ PORT = os.getenv('PORT', 5000)
 
 
 #
-# Setup configuration
+# Initialize configuration
 #
 config = {
     'modbusProto': 'UDP',
@@ -33,6 +33,7 @@ if os.path.exists('config.json'):
     with open('config.json') as f:
         config.update(json.load(f))
 
+
 #
 # Setup socket.io routes
 #
@@ -45,43 +46,45 @@ def connect(sid, environ):
 
 @sio.on('read')
 def read(sid, data):
-    readWorker(data['ip'], data['type'], data['offset'], data.get('count', 1))
-def readWorker(ip, typ, offset, count):
-    c = getModbusClient(ip)
+    rd = getModbusClient(data['ip'])
+    rd.addCallback(readCallback, data)
+    rd.addErrback(lambda r: modbusErrbackConnection('read', r, data))
+
+def readCallback(client, data):
+    typ, offset, count = data['type'], data['offset'], data.get('count', 1)
 
     if typ == 'hreg':
-        rq = c.read_holding_registers(offset, count)
+        rq = client.read_holding_registers(offset, count)
+        getRes = lambda r: r.registers
     elif typ == 'coil':
-        rq = c.read_coil(offset, count)
+        rq = client.read_coils(offset, count)
+        getRes = lambda r: r.bits
     else:
-        raise "Unknown read data type requested: %s"%typ
+        sio.emit('readResponse', {'ip': data['ip'], 'type': typ, 'error': 'Unknown read data type requested: %s'%typ})
+        return
 
-    if not rq:
-        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
-    elif rq.function_code < 0x80:
-        sio.emit('readResponse', {'ip': ip, 'type': typ, 'offset': offset, 'value': rq.registers})
-    else:
-        sio.emit('readResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%rq.function_code})
+    rq.addCallback(lambda r: modbusCallback('read', r, data, getRes(r)))
+    rq.addErrback(lambda r: modbusErrbackResponse('read', r, data))
 
 @sio.on('write')
 def write(sid, data):
-    writeWorker(data['ip'], data['type'], data['offset'], data['value'])
-def writeWorker(ip, typ, offset, value):
-    c = getModbusClient(ip)
+    rd = getModbusClient(data['ip'])
+    rd.addCallback(writeCallback, data)
+    rd.addErrback(lambda r: modbusErrbackConnection('write', r, data))
+
+def writeCallback(client, data):
+    typ, offset, value = data['type'], data['offset'], data['value']
 
     if typ == 'hreg':
-        rq = c.write_registers(offset, value)
-    elif typ == 'coil':
-        rq = c.write_coils(offset, value)
+        rq = client.write_registers(offset, value)
+    if typ == 'coil':
+        rq = client.write_coils(offset, value)
     else:
-        raise "Unknown write data type requested: %s"%typ
+        sio.emit('writeResponse', {'ip': data['ip'], 'type': typ, 'error': 'Unknown write data type requested: %s'%typ})
+        return
 
-    if not rq:
-        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
-    elif rq.function_code < 0x80:
-        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'value': value})
-    else:
-        sio.emit('writeResponse', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%rq.function_code})
+    rq.addCallback(lambda r: modbusCallback('write', r, data, value))
+    rq.addErrback(lambda r: modbusErrbackResponse('write', r, data))
 
 @sio.on('getConfig')
 def getConfig(sid, data = None):
@@ -96,16 +99,37 @@ def updateConfig(sid, data):
 
 
 # Return modbus client for the selected protocol
-def getModbusClient(ip, proto = config.get('modbusProto'), port = config.get('modbusPort')):
+def getModbusClient(ip):
     host = '.'.join(map(str, ip))
+    proto = config.get('modbusProto')
+    port = int(config.get('modbusPort'))
     if proto == 'UDP':
-        return ModbusUdpClient(host, port=port, timeout=0.2) # timeout important since it's sync :(
+        creator = None
     elif proto == 'TCP':
-        c = ModbusClient(host, port=port)
-        c.connect()
-        return c
+        creator = protocol.ClientCreator(reactor, ModbusClientProtocol)
+        return creator.connectTCP(host, port)
     else:
+        # @todo emit error over websocket instead
         raise "Unknown Modbus protocol: %s"%proto
+
+# Callback for modbus read/write requests
+def modbusCallback(s, r, data, value):
+    ip, typ, offset = data['ip'], data['type'], data['offset']
+    if r.function_code < 0x80:
+        sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'value': value})
+    else:
+        sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: 0x%x'%r.function_code})
+
+# Errback for modbus read/write requests
+def modbusErrbackResponse(s, r, data):
+    ip, typ, offset = data['ip'], data['type'], data['offset']
+    sio.emit(s + 'Response', {'ip': ip, 'type': typ, 'offset': offset, 'error': 'Unexpected response: no response'})
+    return r
+
+# Errback for opening modbus connection
+def modbusErrbackConnection(s, r, data):
+    sio.emit(s + 'Response', {'ip': data['ip'], 'error': 'Could not open Modbus connection'})
+    return r
 
 
 #
