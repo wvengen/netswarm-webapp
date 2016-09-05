@@ -34,6 +34,13 @@ python app.py
 Then visit [http://localhost:5000/](http://localhost:5000).
 
 
+## Permissions
+
+To be able to receive commands from nodes, you either need to run as root, or
+use a port number &gt;1024 (webapp and nodes). The app will run if these
+conditions aren't met, but you won't see any updates initiated by the nodes.
+
+
 ## Configure
 
 Configuration is stored by the server in the file `config.json` (which is

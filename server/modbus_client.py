@@ -100,7 +100,6 @@ def disconnect(client, arg = None):
         pass # shouldn't happen, we catch this error already elsewhere
     return arg
 
-
 def deferredErr(v):
     d = defer.Deferred()
     d.errback(v)

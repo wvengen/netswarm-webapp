@@ -1,12 +1,19 @@
 import os
 import signal
-from twisted.internet import reactor
+from twisted.internet import reactor, error
 from twisted.web.static import File
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
 
 from config import config
-from websocket import sio
+from websocket import sio, pushRead
+import modbus_server
+
+import logging
+_logger = logging.getLogger(__name__)
+## Uncomment to get debug logging
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
 
 #
 # Setup and run webserver
@@ -32,6 +39,10 @@ def main(port):
     # go
     site = Site(root)
     reactor.listenTCP(port, site)
+    try:
+        modbus_server.server(pushRead)
+    except error.CannotListenError, e:
+        _logger.warn('Continuing without Modbus server: %s' % e)
     reactor.run()
 
 def signal_handler(*args):
