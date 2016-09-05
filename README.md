@@ -34,16 +34,6 @@ python app.py
 Then visit [http://localhost:5000/](http://localhost:5000).
 
 
-## Permissions
-
-* To be able to receive commands from nodes, you either need to run as root, or
-  use a port number &gt;1024 (webapp and nodes). The app will run if these
-  conditions aren't met, but you won't see any updates initiated by nodes.
-
-* After changing the protocol or port number, the server currently needs to
-  be restarted if you want to see updates initiated by nodes.
-
-
 ## Configure
 
 Configuration is stored by the server in the file `config.json` (which is
@@ -99,3 +89,15 @@ values (e.g., the first two bytes of an IP-address), set `bits` to one of `1`,
 ```
 
 will show a value of _49320_ as _192, 168_.
+
+
+## Caveats
+
+* To be able to receive updates initiated by nodes (as opposed to updates
+  requested from the webapp), you either need to run as root or use a port
+  number &gt;1024 (webapp and nodes). The app will run if this condition
+  isn't met, but you won't see any updates initiated by nodes.
+
+* After changing the protocol or port number, the server currently needs to
+  be restarted if you want to see updates initiated by nodes.
+
