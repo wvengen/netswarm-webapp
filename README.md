@@ -91,13 +91,19 @@ values (e.g., the first two bytes of an IP-address), set `bits` to one of `1`,
 will show a value of _49320_ as _192, 168_.
 
 
-## Caveats
+## Notes
 
 * To be able to receive updates initiated by nodes (as opposed to updates
   requested from the webapp), you either need to run as root or use a port
   number &gt;1024 (webapp and nodes). The app will run if this condition
   isn't met, but you won't see any updates initiated by nodes.
 
+* To receive broadcast messages (for node-initiated updates), you may need
+  to tell your firewall to allow this, if you have one.
+
 * After changing the protocol or port number, the server currently needs to
   be restarted if you want to see updates initiated by nodes.
+
+* To see what's going over the wire, [Wireshark](http://wireshark.org/) is
+  invaluable. You'll need at least version 2.3 to dissect UDP messages.
 
