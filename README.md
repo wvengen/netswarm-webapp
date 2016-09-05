@@ -36,9 +36,12 @@ Then visit [http://localhost:5000/](http://localhost:5000).
 
 ## Permissions
 
-To be able to receive commands from nodes, you either need to run as root, or
-use a port number &gt;1024 (webapp and nodes). The app will run if these
-conditions aren't met, but you won't see any updates initiated by the nodes.
+* To be able to receive commands from nodes, you either need to run as root, or
+  use a port number &gt;1024 (webapp and nodes). The app will run if these
+  conditions aren't met, but you won't see any updates initiated by nodes.
+
+* After changing the protocol or port number, the server currently needs to
+  be restarted if you want to see updates initiated by nodes.
 
 
 ## Configure
