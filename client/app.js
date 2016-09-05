@@ -1,5 +1,7 @@
 const {connect} = ReactRedux;
-const {Button, Glyphicon, Navbar, OverlayTrigger, Tooltip} = ReactBootstrap;
+const {Button, Glyphicon, Nav, Navbar, NavItem, OverlayTrigger, Tooltip} = ReactBootstrap;
+const {hashHistory, Route, Router, IndexRedirect} = ReactRouter;
+const {LinkContainer} = ReactRouterBootstrap;
 
 /*
  * Container: StatusLightContainer
@@ -39,6 +41,10 @@ const Layout = ({children}) => (
       <Navbar.Header>
         <Navbar.Brand>NetSwarm</Navbar.Brand>
       </Navbar.Header>
+      <Nav>
+        <LinkContainer to={{pathname: '/nodes'}}><NavItem href='/nodes'>Nodes</NavItem></LinkContainer>
+        <LinkContainer to={{pathname: '/matrix'}}><NavItem href='/matrix'>Matrix</NavItem></LinkContainer>
+      </Nav>
       <Navbar.Form pullRight>
         <SettingsButton />
       </Navbar.Form>
@@ -58,9 +64,13 @@ const Layout = ({children}) => (
 class App extends React.Component {
   render() {
     return (
-      <Layout>
-        <NodePanelListContainer />
-      </Layout>
+      <Router history={hashHistory}>
+        <Route path='/' component={Layout}>
+          <IndexRedirect to='/nodes' />
+          <Route path='nodes' component={NodePanelListContainer} />
+          <Route path='matrix' component={MatrixContainer} />
+        </Route>
+      </Router>
     );
   }
 }

@@ -5,7 +5,7 @@ let reducers = {};
  * Status
  */
 function updateConnected(state) {
-  return {type: 'setConnected', state};
+  return {type: 'updateStatus', status: {connected: state}};
 }
 socket.on('connect', () => {
   store.dispatch(updateConnected('connecting'));
@@ -22,8 +22,8 @@ const initialStatusState = {
 };
 reducers.status = (state = initialStatusState, action) => {
   switch(action.type) {
-  case 'setConnected':
-    return {...state, connected: action.state};
+  case 'updateStatus':
+    return {...state, ...action.status};
   default:
     return state;
   }
