@@ -40,7 +40,7 @@ def write(ip, typ, offset, values):
 def writeCallback(client, typ, offset, values):
     if typ == 'hreg':
         rq = client.write_registers(offset, values)
-    if typ == 'coil':
+    elif typ == 'coil':
         rq = client.write_coils(offset, values)
     else:
         disconnect(client)
