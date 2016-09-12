@@ -24,7 +24,16 @@ function ip2NodeId(ipStart, ip) {
   }
 }
 
+function registerLabel(config, addr) {
+  if (config[addr] && config[addr].label) {
+    return config[addr].label;
+  } else {
+    return `Address ${addr}`;
+  }
+}
+
 // 'exports'
 window.ipAddrBytes = ipAddrBytes;
 window.nodeId2Ip = nodeId2Ip;
 window.ip2NodeId = ip2NodeId;
+window.registerLabel = registerLabel;

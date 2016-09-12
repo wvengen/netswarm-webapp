@@ -1,18 +1,48 @@
 const {connect} = ReactRedux;
-const {Button, Checkbox, Panel, PanelGroup, Table} = ReactBootstrap;
+const {Table, Column, Cell} = FixedDataTable;
 
 class Matrix extends React.Component {
   render() {
-    return <div>hi :)</div>;
+    const {nodes, config, containerWidth} = this.props;
+    const registers = Object.keys(config);
+
+    return (
+      <Table rowsCount={nodes.length}
+          rowHeight={35} headerHeight={35}
+          width={containerWidth} height={nodes.length * 35 + 35 + 2}>
+        <Column header={<th style={{padding: 8}}>ID</th>} cell={props => {
+          const nodeId = nodes[props.rowIndex].nodeId;
+          return (
+            <Cell {...props}>
+              {typeof(nodeId) === 'string'
+                ? <span style={{fontSize: '60%'}}>{nodeId}</span>
+                : nodeId}
+            </Cell>
+          );
+        }} width={80} fixed={true} />
+        {registers.map(addr => (
+          <Column header={<th style={{padding: 8}}>{registerLabel(config, addr)}</th>} cell={props => {
+            const node = nodes[props.rowIndex];
+            return (
+              <Cell {...props}>{<RegisterValue value={node.registers[addr]} {...config[addr]} />}</Cell>
+            );
+          }} width={120} flexGrow={1} />
+        ))}
+      </Table>
+    );
   }
 }
 Matrix.propTypes = {
-  nodeIds: React.PropTypes.arrayOf(React.PropTypes.number).isRequired,
+  config: React.PropTypes.object.isRequired,
+  nodes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  // from ReactDimensions
+  containerHeight: React.PropTypes.number.isRequired,
+  containerWidth: React.PropTypes.number.isRequired,
 };
 
 const MatrixContainer = connect(
-  ({modbus}) => ({nodeIds: Object.keys(modbus)})
-)(Matrix);
+  ({modbus, config: {registers}}) => ({nodes: Object.values(modbus) || [], config: registers || {}})
+)(ReactDimensions()(Matrix));
 
 // 'exports'
 window.MatrixContainer = MatrixContainer;
