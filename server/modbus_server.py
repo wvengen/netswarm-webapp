@@ -1,3 +1,4 @@
+import socket
 from twisted.internet import reactor, protocol
 from pymodbus.factory import ServerDecoder
 from pymodbus.transaction import ModbusSocketFramer
@@ -44,12 +45,15 @@ class ModbusTcpProtocol(PymodbusTcpProtocol):
         :param request: decoded request message
         '''
         peer = self.transport.getPeer()
-        ip, port = peer.host, peer.port
-        _logger.debug('Modbus message from [%s:%s]: %s' % (ip, port, request))
+        host = self.transport.getHost()
+        srcIp, srcPort = peer.host, peer.port
+        dstIp, dstPort = host.host, host.port
+        _logger.debug('Modbus message from [%s:%s] to [%s:%s]: %s' % (srcIp, srcPort, dstIp, dstPort, request))
         if self._modbusCallback:
-            ipArray = map(int, ip.split('.'))
+            srcIpArray = map(int, srcIp.split('.'))
+            dstIpArray = map(int, dstIp.split('.'))
             typ, address, values = parseModbusRequest(request)
-            if typ: self._modbusCallback(ipArray, typ, address, values)
+            if typ: self._modbusCallback(srcIpArray, dstIpArray, typ, address, values)
         # no replies
         self.transport.loseConnection()
 
@@ -73,6 +77,9 @@ class ModbusUdpProtocol(protocol.DatagramProtocol):
         framer = framer or ModbusSocketFramer
         self.framer = framer(decoder=ServerDecoder())
         self._modbusCallback = callback
+        # @todo set IP_PKTINFO (8) option to obtain destination address
+        # @todo then figure out how to call recvmsg ... :/
+        #self.transport.getHandle().setsockopt(socket.IPPROTO_IP, 8, 1)
 
     def datagramReceived(self, data, addr):
         '''Callback when we receive any data
@@ -80,8 +87,8 @@ class ModbusUdpProtocol(protocol.DatagramProtocol):
         :param data: data sent by the client
         :param addr: tuple of source of datagram
         '''
-        ip, port = addr
-        _logger.debug('Packet from [%s:%s]' % (ip, port))
+        srcIp, srcPort = addr
+        _logger.debug('Packet from [%s:%s]' % (srcIp, srcPort))
         if _logger.isEnabledFor(logging.DEBUG):
             _logger.debug(' '.join([hex(ord(x)) for x in data]))
         self.framer.processIncomingPacket(data, lambda r: self._execute(r, addr))
@@ -92,12 +99,12 @@ class ModbusUdpProtocol(protocol.DatagramProtocol):
         :param request: decoded request message
         :param addr: tuple of source of datagram
         '''
-        ip, port = addr
-        _logger.debug('Modbus message from [%s:%s]: %s' % (ip, port, request))
+        srcIp, srcPort = addr
+        _logger.debug('Modbus message from [%s:%s] to [assumed broadcast]: %s' % (srcIp, srcPort, request))
         if self._modbusCallback:
-            ipArray = map(int, ip.split('.'))
+            srcIpArray = map(int, srcIp.split('.'))
             typ, address, values = parseModbusRequest(request)
-            self._modbusCallback(ipArray, typ, address, values)
+            self._modbusCallback(srcIpArray, None, typ, address, values)
 
 
 def server(callback):
@@ -120,4 +127,10 @@ def server(callback):
 #   http://stackoverflow.com/questions/21770219/twisted-python-udp-broadcast-simple-echo-server
 #   http://serverfault.com/questions/421373/can-i-test-broadcast-packets-on-a-single-machine
 #   http://jdimpson.livejournal.com/6812.html
+#
+# and regarding getting the _destination_ address of UDP packets in Twisted, see:
+#   http://stackoverflow.com/questions/11400494/how-to-get-multicast-group-address
+#   http://stackoverflow.com/questions/20380849/how-to-get-original-destination-address
+#   http://stackoverflow.com/questions/5281409/get-destination-address-of-a-received-udp-packet
+#   https://twistedmatrix.com/documents/current/api/twisted.pair.rawudp.RawUDPProtocol.html
 #

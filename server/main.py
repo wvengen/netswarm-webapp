@@ -6,7 +6,7 @@ from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
 
 from config import config
-from websocket import sio, pushRead
+from websocket import sio, pushWrite
 import modbus_server
 
 import logging
@@ -40,7 +40,7 @@ def main(port):
     site = Site(root)
     reactor.listenTCP(port, site)
     try:
-        modbus_server.server(pushRead)
+        modbus_server.server(pushWrite)
     except error.CannotListenError, e:
         _logger.warn('Continuing without Modbus server: %s' % e)
     reactor.run()

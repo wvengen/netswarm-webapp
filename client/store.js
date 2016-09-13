@@ -84,16 +84,24 @@ function updateRegister(nodeId, ip, offset, value) {
     dispatch({type: 'updateModbusRegister', nodeId, ip, offset: parseInt(offset), value, registers});
   };
 }
+function broadcastRegister(srcNodeId, offset, value) {
+  return {type: 'broadcastModbusRegister', offset: parseInt(offset), value, srcNodeId};
+}
 function updateNodes(ipStart, nDevices, registers) {
   return {type: 'updateNodes', ipStart, nDevices, registers};
 }
 
-function handleModbusResponse(rw, type, ip, offset, value, error) {
+function handleModbusResponse(rw, type, ip, offset, value, error, srcIp) {
   if (!error) {
-    const nodeId = ip2NodeId(store.getState().config.ipStart, ip);
-    value.forEach(v => {
-      store.dispatch(updateRegister(nodeId, ip, offset, v));
-    });
+    if (ip !== null && ip[3] !== 255) {
+      // unicast message
+      const nodeId = ip2NodeId(store.getState().config.ipStart, ip);
+      value.forEach(v => store.dispatch(updateRegister(nodeId, ip, offset, v)));
+    } else {
+      // broadcast message
+      const srcNodeId = ip2NodeId(store.getState().config.ipStart, srcIp);
+      value.forEach(v => store.dispatch(broadcastRegister(srcNodeId, offset, v)));
+    }
   } else {
     // @todo handle errors
     console.log('Modbus error response:', error);
@@ -104,6 +112,9 @@ socket.on('readResponse', ({type, ip, offset, value, error}) => {
 });
 socket.on('writeResponse', ({type, ip, offset, value, error}) => {
   handleModbusResponse('write', type, ip, offset, value, error);
+});
+socket.on('writeRequest', ({type, srcIp, dstIp, offset, value, error}) => {
+  handleModbusResponse('write', type, dstIp, offset, value, error, srcIp);
 });
 
 const initialModbusState = {};
@@ -117,6 +128,13 @@ reducers.modbus = (state = initialModbusState, action) => {
     const newRegisters = {...oldNodeData.registers, [action.offset]: action.value};
     const newNodeData = {...oldNodeData, lastSeen: now, registers: newRegisters};
     return {...state, [nodeId]: newNodeData};
+  case 'broadcastModbusRegister':
+    return Object.entries(state).reduce( (r, [nodeId, node]) => {
+      const newRegisters = {...node.registers, [action.offset]: action.value};
+      const newLastSeen = nodeId === action.srcNodeId ? new date().getTime() : node.lastSeen;
+      r[nodeId] = {...node, lastSeen: newLastSeen, registers: newRegisters};
+      return r;
+    }, {});
   case 'updateNodes':
     const ids = Array.from(Array(action.nDevices).keys());
     return ids.reduce((r, nodeId) => {

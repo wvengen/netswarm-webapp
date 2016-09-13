@@ -37,9 +37,9 @@ def updateConfig(sid, data):
     config.save()
     sio.emit('config', config.data)
 
-def pushRead(ip, typ, offset, values):
+def pushWrite(srcIp, dstIp, typ, offset, values):
     '''Send register update to client'''
-    sio.emit('readResponse', {'ip': ip, 'type': typ, 'offset': offset, 'value': values})
+    sio.emit('writeRequest', {'srcIp': srcIp, 'dstIp': dstIp, 'type': typ, 'offset': offset, 'value': values})
 
 
 def modbusErrback(e, ip, typ, offset):

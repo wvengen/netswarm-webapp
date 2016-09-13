@@ -101,6 +101,10 @@ will show a value of _49320_ as _192, 168_.
 * To receive broadcast messages (for node-initiated updates), you may need
   to tell your firewall to allow this, if you have one.
 
+* All received UDP messages are assumed to be broadcasted. If you're connected
+  to a network hub, and your nodes send UDP messages to a specific address,
+  what you see may be wrong. Please open an issue if this is a problem for you.
+
 * After changing the protocol or port number, the server currently needs to
   be restarted if you want to see updates initiated by nodes.
 
