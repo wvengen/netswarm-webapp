@@ -131,7 +131,7 @@ reducers.modbus = (state = initialModbusState, action) => {
   case 'broadcastModbusRegister':
     return Object.entries(state).reduce( (r, [nodeId, node]) => {
       const newRegisters = {...node.registers, [action.offset]: action.value};
-      const newLastSeen = nodeId === action.srcNodeId ? new date().getTime() : node.lastSeen;
+      const newLastSeen = nodeId == action.srcNodeId ? new Date().getTime(): node.lastSeen;
       r[nodeId] = {...node, lastSeen: newLastSeen, registers: newRegisters};
       return r;
     }, {});
