@@ -10,7 +10,7 @@ class Matrix extends React.Component {
       <Table rowsCount={nodes.length}
           rowHeight={35} headerHeight={35}
           width={containerWidth} height={nodes.length * 35 + 35 + 2}>
-        <Column header={<th style={{padding: 8}}>ID</th>} cell={props => {
+        <Column header={<div style={{padding: 8}}>ID</div>} cell={props => {
           const nodeId = nodes[props.rowIndex].nodeId;
           return (
             <Cell {...props}>
@@ -21,7 +21,7 @@ class Matrix extends React.Component {
           );
         }} width={80} fixed={true} />
         {registers.map(addr => (
-          <Column header={<th style={{padding: 8}}>{registerLabel(config, addr)}</th>} cell={props => {
+          <Column key={addr} header={<div style={{padding: 8}}>{registerLabel(config, addr)}</div>} cell={props => {
             const node = nodes[props.rowIndex];
             return (
               <Cell {...props}>{<RegisterValue value={node.registers[addr]} {...config[addr]} />}</Cell>
