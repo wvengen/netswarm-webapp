@@ -3,13 +3,13 @@ const {Table, Column, Cell} = FixedDataTable;
 
 class Matrix extends React.Component {
   render() {
-    const {nodes, config, containerWidth} = this.props;
+    const {nodes, config, containerHeight, containerWidth} = this.props;
     const registers = Object.keys(config);
 
     return (
       <Table rowsCount={nodes.length}
           rowHeight={35} headerHeight={35}
-          width={containerWidth} height={nodes.length * 35 + 35 + 2}>
+          width={containerWidth} height={containerHeight}>
         <Column header={<div style={{padding: 8}}>ID</div>} cell={props => {
           const nodeId = nodes[props.rowIndex].nodeId;
           return (
@@ -44,5 +44,14 @@ const MatrixContainer = connect(
   ({modbus, config: {registers}}) => ({nodes: Object.values(modbus) || [], config: registers || {}})
 )(ReactDimensions()(Matrix));
 
+
+// Fullscreen matrix view wrapper
+const MatrixContainerFullpage = props => (
+  <div style={{height: window.innerHeight - 100}}>
+    <MatrixContainer {...props} />
+  </div>
+);
+
 // 'exports'
 window.MatrixContainer = MatrixContainer;
+window.MatrixContainerFullpage = MatrixContainerFullpage;

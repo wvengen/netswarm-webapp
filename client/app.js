@@ -68,7 +68,7 @@ class App extends React.Component {
         <Route path='/' component={Layout}>
           <IndexRedirect to='/nodes' />
           <Route path='nodes' component={NodePanelListContainer} />
-          <Route path='matrix' component={MatrixContainer} />
+          <Route path='matrix' component={MatrixContainerFullpage} />
         </Route>
       </Router>
     );
