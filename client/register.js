@@ -14,7 +14,7 @@ class EditBox extends React.Component {
     } else {
       return <input type='number' defaultValue={this.props.value}
                     onKeyUp={this._onKeyUp.bind(this)} onBlur={this._onBlur.bind(this)}
-                    style={{width: 45, margin: 0, padding: 2, border: '1px solid #ccc', borderRadius: 2}}
+                    style={{width: 45, margin: 0, padding: 1.5, border: '1px solid #ccc', borderRadius: 2}}
                     ref='input' />
     }
   }
@@ -64,7 +64,7 @@ EditBox.propTypes = {
 const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
   const readonly = !['hreg', 'coil'].includes(type);
   const parts = splitValue(value, bits);
-  const showPre = s => <span style={{color: '#aaa'}}>{s}</span>;
+  const showPre = s => <span style={{color: '#aaa', height: 20}}>{s}</span>;
   const change = (newValue, i) => (onChange && !readonly) ? onChange(combineValue(value, bits, newValue, i)) : null;
   let useSep = true;
   let showPart = e => e;
@@ -95,9 +95,9 @@ const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
   }
 
   return (
-    <span {...props}>{parts.map(showPart).reduce((r, part, i) => (
+    <div {...props} style={{minHeight: 25}}>{parts.map(showPart).reduce((r, part, i) => (
       r.concat((r.length && useSep) > 0 ? [<span key={[i, 'sep']}>, </span>, part] : [part])
-    ), [])}</span>
+    ), [])}</div>
   );
 }
 // return array of value split by bits (most significant first)

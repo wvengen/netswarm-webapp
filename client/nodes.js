@@ -8,8 +8,8 @@ const NodeRegisters = ({registers, config, onChange}) => {
   return (
     <div>
       {Object.entries(registers).map(([idx, val]) => (
-        <div key={idx} style={{display: 'inline-block', textAlign: 'right', width: 220, padding: '6px 12px', border: '1px solid #ddd'}}>
-          <span style={{float: 'left', textAlign: 'left'}}>
+        <div key={idx} style={{display: 'inline-block', textAlign: 'right', verticalAlign: 'top', width: 220, padding: '6px 12px', border: '1px solid #ddd'}}>
+          <span style={{float: 'left', textAlign: 'left', verticalAlign: 'middle'}}>
             {registerLabel(config, idx)}
           </span>
           <RegisterValue value={val} {...config[idx]} onChange={val => onChange ? onChange(idx, val) : null} />
