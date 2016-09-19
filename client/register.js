@@ -1,6 +1,63 @@
 const {connect} = ReactRedux;
 const {Button, Checkbox} = ReactBootstrap;
 
+class EditBox extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {editing: false};
+    this._canBlur = false;
+  }
+
+  render() {
+    if (!this.state.editing) {
+      return <b onClick={this._onClick.bind(this)}>{this.props.value}</b>;
+    } else {
+      return <input type='number' defaultValue={this.props.value}
+                    onKeyUp={this._onKeyUp.bind(this)} onBlur={this._onBlur.bind(this)}
+                    style={{width: 45, margin: 0, padding: 2, border: '1px solid #ccc', borderRadius: 2}}
+                    ref='input' />
+    }
+  }
+
+  componentDidUpdate() {
+    this.refs.input && this.refs.input.focus(); // focus input when rendered
+    this._canBlur = true;
+  }
+
+  _onClick(e) {
+    this.setState({editing: true});
+    this._canBlur = false;
+  }
+
+  _onApply(e) {
+    if (this.props.onChange) {
+      this.props.onChange(e.target.value, e);
+    }
+    this.setState({editing: false});
+  }
+
+  _onCancel(e) {
+    this.setState({editing: false});
+  }
+
+  _onKeyUp(e) {
+    if (e.keyCode === 13) { // enter
+      this._onApply(e);
+    } else if (e.keyCode === 27) { // escape
+      this._onCancel(e);
+    }
+  }
+
+  _onBlur(e) {
+    // there can also be a blur event before it's focused
+    if (this._canBlur) { this._onApply(e); }
+  }
+}
+EditBox.propTypes = {
+  onChange: React.PropTypes.func,
+  value: React.PropTypes.string.isRequired,
+};
+
 /*
  * Component: RegisterValue
  */
@@ -13,14 +70,13 @@ const RegisterValue = ({value, type, format, bits, onChange, ...props}) => {
   let showPart = e => e;
 
   if (format === 'hex') {
-    showPart = (v,i) => <span key={i}>{showPre('0x')}<b>{v.toString(16)}</b></span>;
+    showPart = (v,i) => <span key={i}>{showPre('0x')}<EditBox value={v.toString(16)} onChange={v => change(parseInt(v, 16), i)} /></span>;
   } else if (format === 'dec') {
-    showPart = (v,i) => <span key={i}><b>{v.toString(10)}</b></span>;
+    showPart = (v,i) => <span key={i}><EditBox value={v.toString(10)} onChange={v => change(parseInt(v, 10), i)}/></span>;
   } else if (format === 'oct') {
-    showPart = (v,i) => <span key={i}>{showPre('0')}<b>{v.toString(8)}</b></span>;
+    showPart = (v,i) => <span key={i}>{showPre('0')}<EditBox value={v.toString(8)} onChange={v => change(parseInt(v, 8), i)} /></span>;
   } else if (format === 'bool') {
-    showPart = (v,i) => <input key={i} type='checkbox' checked={!!v} disabled={readonly}
-                               onChange={change(v ? 0 : 1, i)} />;
+    showPart = (v,i) => <input key={i} type='checkbox' checked={!!v} disabled={readonly} onChange={() => change(v ? 0 : 1, i)} />;
     useSep = false;
   } else if (format === 'btn') {
     showPart = (v,i) => <Button key={i} active={!!v} disabled={readonly} bsSize='xsmall' style={{verticalAlign: 'top', lineHeight: 1.4}}
